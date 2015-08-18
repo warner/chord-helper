@@ -1,0 +1,12 @@
+
+line.string {
+    fill: #000;
+    stroke: #000;
+    stroke-width: 2px;
+}
+
+line.fret {
+    fill: #000;
+    stroke: brown;
+    stroke-width: 2px;
+}
