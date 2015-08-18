@@ -84,6 +84,7 @@ function string_and_fret_to_note(string, fret) {
 
 var use_flats;
 var scale; // E major
+var chord = [1,3,5]; // major-scale degrees
 
 function draw_frets() {
     d3.select("svg#svg").remove();
@@ -136,7 +137,6 @@ function draw_frets() {
             spots.push(spot);
         }
     }
-    var chord = [1,3,5]; // major-scale degrees
     svg.selectAll("circle.finger").data(spots).enter()
         .append("circle").attr("class", "finger")
         .attr("cx", function(d) {return fingerX(d.fret);})
@@ -159,7 +159,7 @@ function draw_frets() {
         .text(function(d) {return d.fullname;});
 }
 
-function draw_scale() {
+function draw_scale_chooser() {
     var scales = [
         [-6, "Gb", true],
         [-5, "Db", true],
@@ -205,16 +205,62 @@ function draw_scale() {
 }
 
 function select_scale(d) {
+    d3.selectAll("rect.scale-indicator").attr("stroke", "#fff");
+    d3.selectAll("rect.scale-indicator-"+d[0]).attr("stroke", "#000");
     scale = d[0]*7%12;
     use_flats = d[2];
     draw_frets();
-    d3.selectAll("rect.scale-indicator").attr("stroke", "#fff");
-    d3.selectAll("rect.scale-indicator-"+d[0]).attr("stroke", "#000");
+}
+
+function draw_chord_chooser() {
+    var chords = [
+        ["I", [1,3,5]],
+        ["ii", [2,4,6]],
+        ["iii", [3,5,7]],
+        ["IV", [4,6,1]],
+        ["V", [5,7,2]],
+        ["vi", [6,1,3]],
+    ];
+    var w = 50;
+    d3.select("div#chord svg").remove();
+    var svg = d3.select("div#chord").append("svg");
+    svg.attr("height", 100).attr("width", chords.length*w);
+    var groups = svg.selectAll("g.chord").data(chords)
+            .enter().append("svg:g")
+            .attr("class", "scale")
+            .attr("transform", function(d,i) {
+                var x = i*w;
+                return "translate("+x+",0)";
+            })
+            .on("click", select_chord)
+    ;
+    var rects = groups.append("svg:rect")
+            .attr("class", function(d) {return "chord-indicator "
+                                        +"chord-indicator-"+d[0];})
+            .attr("height", "1em")
+            .attr("width", function(d) {
+                return (1 + 0.5*(d[1].length-1) + "em");
+            })
+            .attr("fill", "#eee")
+            .attr("stroke-width", "2px")
+    ;
+    groups.append("svg:text").text(function(d) {return d[0];})
+        .attr("dy", "0.9em").attr("dx", "0.1em")
+    ;
+}
+
+function select_chord(d) {
+    d3.selectAll("rect.chord-indicator").attr("stroke", "#fff");
+    d3.selectAll("rect.chord-indicator-"+d[0]).attr("stroke", "#000");
+    chord = d[1];
+    draw_frets();
 }
 
 function main() {
-    draw_scale();
+    draw_scale_chooser();
+    draw_chord_chooser();
     select_scale([4, "E", false]);
+    select_chord(["I", [1,3,5]]);
     draw_frets();
 }
 
