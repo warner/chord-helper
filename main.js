@@ -141,7 +141,13 @@ function draw_frets() {
         .append("circle").attr("class", "finger")
         .attr("cx", function(d) {return fingerX(d.fret);})
         .attr("cy", function(d) {return stringY(d.string);})
-        .attr("r", 10)
+        .attr("r", function(d) {
+            if (chord.indexOf(d.major_degree) == 0)
+                return 15;
+            if (chord.indexOf(d.major_degree) == 1)
+                return 12;
+            return 10;
+        })
         .attr("fill", function(d) {return d.color;})
         .style("visibility", function(d) {
             if (chord.indexOf(d.major_degree) != -1)
