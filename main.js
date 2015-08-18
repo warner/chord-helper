@@ -183,7 +183,7 @@ function draw_scale_chooser() {
             .attr("class", "scale")
             .attr("transform", function(d) {
                 var x = Math.round(2*r+r*Math.sin(d[0]/3*Math.PI/2));
-                var y = Math.round(1.5*r-r*Math.cos(d[0]/3*Math.PI/2));
+                var y = Math.round(1*r-r*Math.cos(d[0]/3*Math.PI/2));
                 return "translate("+x+","+y+")";
             })
             .on("click", select_scale)
@@ -237,15 +237,16 @@ function draw_chord_chooser() {
     var rects = groups.append("svg:rect")
             .attr("class", function(d) {return "chord-indicator "
                                         +"chord-indicator-"+d[0];})
-            .attr("height", "1em")
+            .attr("height", "1.2em")
             .attr("width", function(d) {
                 return (1 + 0.5*(d[1].length-1) + "em");
             })
-            .attr("fill", "#eee")
+            .attr("fill", function(d){return major_scale_colors[d[1][0]];})
             .attr("stroke-width", "2px")
     ;
     groups.append("svg:text").text(function(d) {return d[0];})
-        .attr("dy", "0.9em").attr("dx", "0.1em")
+        .attr("text-anchor", "middle")
+        .attr("dy", "1.0em").attr("dx", "1em")
     ;
 }
 

@@ -10,3 +10,19 @@ line.fret {
     stroke: brown;
     stroke-width: 2px;
 }
+
+div#control {
+    position: relative;
+    height: 150px;
+}
+div#scale {
+    position: absolute;
+    left: 0px;
+    width: 300px;
+}
+
+div#chord {
+    position: absolute;
+    top: 30%;
+    right: 0px;
+}
