@@ -12,6 +12,10 @@ var num_frets = 7;
 
 */
 
+var use_flats;
+var scale; // E major
+var chord = [1,3,5]; // major-scale degrees
+
 var major_scale_colors = { // sampled from iBooks Hooktheory
     0: "rgba(255,255,255,0.5)",
     1: "#F33C27", // red
@@ -26,17 +30,21 @@ var major_scale_colors = { // sampled from iBooks Hooktheory
 
 //var chromatic_scale_to_major_scale_degree {
 
+function mod12(n) {
+    // why is -2%12==-2 in JS?
+    return (n%12+12)%12;
+}
 
 // note=0 is the low E on string=1
 // chromatic_scale=0 is a C, 4=E,5=F,7=G,11=B
 function note_to_chromatic_scale(note) {
-    return (note+4) % 12;
+    return mod12(note+4);
 }
 
 // note=0 is E2. scale=0 is C major. scale=1 is C# major.
 function note_to_major_scale_degree(note, scale) {
     // returns 1-7 for notes that are in the scale, 0 for non-scale
-    var chromatic_degree = (note+4-scale) % 12;
+    var chromatic_degree = mod12(note+4-scale);
     return {0: 1, 1:0,
             2: 2, 3:0,
             4: 3,
@@ -55,6 +63,16 @@ function chromatic_scale_to_name(chromatic_scale, use_flats) {
         return {0:"C", 1:"C#", 2:"D", 3:"D#", 4:"E", 5:"F",
                 6:"F#", 7:"G", 8:"G#", 9:"A", 10:"A#", 11:"B"
                }[chromatic_scale];
+}
+
+function major_scale_degree_to_chromatic_scale(degree, scale) {
+    var n = scale + {1:0, 2:2, 3:4, 4:5, 5:7, 6:9, 7:11}[degree];
+    return mod12(n);
+}
+
+function major_degree_to_name(degree, scale, use_flats) {
+    var cs = major_scale_degree_to_chromatic_scale(degree, scale);
+    return chromatic_scale_to_name(cs, use_flats);
 }
 
 // note=0 is E2. each octave starts at C and extends upwards through B.
@@ -78,13 +96,23 @@ var open_string_notes = {
     6: 24 // E4
 };
 
+var preferred_chord_fingerings = { // ->[low-to-high]
+    E: [0,2,2,1,0,0],
+    A: ["X",0,2,2,2,0],
+    D: ["X","X",0,2,3,2],
+    Em: [0,2,2,0,0,0],
+    Am: ["X",0,2,2,1,0],
+    F: ["X","X",3,2,1,1],
+    C: ["X",3,2,0,1,0],
+    G: ["X","X",5,4,3,3],
+    Dm: ["X","X",0,2,3,1],
+};
+
+
+
 function string_and_fret_to_note(string, fret) {
     return open_string_notes[string] + fret;
 }
-
-var use_flats;
-var scale; // E major
-var chord = [1,3,5]; // major-scale degrees
 
 function draw_frets() {
     d3.select("svg#svg").remove();
@@ -121,8 +149,7 @@ function draw_frets() {
         .attr("x1", fretX(-0.1)).attr("y1", stringY)
         .attr("x2", fretX(num_frets-0.2)).attr("y2", stringY)
         .style("stroke-width", function(d) { return (7-d)+"px"; })
-        .style("stroke", function(d) {if (d == 5) return "red"
-                                      else return "black";});
+        .style("stroke", "black");
     var spots = [];
     for (var i=0; i<num_frets; i++) {
         for (var j=1; j<=6; j++) {
@@ -213,19 +240,20 @@ function draw_scale_chooser() {
 function select_scale(d) {
     d3.selectAll("rect.scale-indicator").attr("stroke", "#fff");
     d3.selectAll("rect.scale-indicator-"+d[0]).attr("stroke", "#000");
-    scale = d[0]*7%12;
+    scale = mod12(d[0]*7);
     use_flats = d[2];
+    update_chord_chooser();
     draw_frets();
 }
 
 function draw_chord_chooser() {
     var chords = [
-        ["I", [1,3,5]],
-        ["ii", [2,4,6]],
-        ["iii", [3,5,7]],
-        ["IV", [4,6,1]],
-        ["V", [5,7,2]],
-        ["vi", [6,1,3]],
+        ["I", [1,3,5], ""],
+        ["ii", [2,4,6], "m"],
+        ["iii", [3,5,7], "m"],
+        ["IV", [4,6,1], ""],
+        ["V", [5,7,2], ""],
+        ["vi", [6,1,3], "m"],
     ];
     var w = 50;
     d3.select("div#chord svg").remove();
@@ -250,10 +278,39 @@ function draw_chord_chooser() {
             .attr("fill", function(d){return major_scale_colors[d[1][0]];})
             .attr("stroke-width", "2px")
     ;
-    groups.append("svg:text").text(function(d) {return d[0];})
+    groups.append("svg:text")
+        .attr("class", "chord-buttons")
+        .text(function(d) {return d[0];})
         .attr("text-anchor", "middle")
         .attr("dy", "1.0em").attr("dx", "1em")
     ;
+    groups.append("svg:text")
+        .attr("class", "chord-roots")
+        .text("??")
+        .attr("text-anchor", "middle")
+        .attr("dy", "2.2em").attr("dx", "1em")
+    ;
+    groups.append("svg:text")
+        .attr("class", "chord-quality")
+        .text("?")
+        .attr("text-anchor", "middle")
+        .attr("dy", "3.4em").attr("dx", "1em")
+    ;
+}
+
+function update_chord_chooser() {
+    var t = d3.selectAll("div#chord svg text.chord-roots");
+    t.text(function(d) {
+        return major_degree_to_name(d[1][0], scale, use_flats) + d[2];
+    });
+    t = d3.selectAll("div#chord svg text.chord-quality");
+    t.text(function(d) {
+        var name = major_degree_to_name(d[1][0], scale, use_flats) + d[2];
+        var fingering = preferred_chord_fingerings[name];
+        if (fingering)
+            return "+";
+        return "?";
+    });
 }
 
 function select_chord(d) {
@@ -265,9 +322,10 @@ function select_chord(d) {
 
 function main() {
     draw_scale_chooser();
-    draw_chord_chooser();
     select_scale([4, "E", false]);
+    draw_chord_chooser();
     select_chord(["I", [1,3,5]]);
+    update_chord_chooser();
     draw_frets();
 }
 
