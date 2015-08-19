@@ -8,7 +8,6 @@ line.string {
 line.fret {
     fill: #000;
     stroke: brown;
-    stroke-width: 2px;
 }
 
 div#control {

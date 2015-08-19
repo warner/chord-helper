@@ -142,9 +142,13 @@ function draw_frets() {
             .domain([0,num_frets-1])
             .range([half_space,w-x_space-half_space]);
     for (var i=0; i<num_frets; i++) {
+        var fret_width = 2;
+        if (i==0) fret_width = 6;
         svg.append("line").attr("class", "fret")
-            .attr("x1", fretX(i)).attr("y1", stringY(0.5))
-            .attr("x2", fretX(i)).attr("y2", stringY(6.5));
+            .attr("x1", fretX(i)).attr("y1", stringY(1.0))
+            .attr("x2", fretX(i)).attr("y2", stringY(6.0))
+            .attr("stroke-width", fret_width+"px")
+        ;
     }
     var g = svg.selectAll("g.string")
             .data([1,2,3,4,5,6])
