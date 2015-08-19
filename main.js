@@ -1,5 +1,5 @@
 var d3; // defined by import
-var num_frets = 10;
+var num_frets = 13;
 
 /*
   fret=0 is an open string
