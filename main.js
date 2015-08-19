@@ -1,3 +1,4 @@
+var d3; // defined by import
 var num_frets = 7;
 
 /*
