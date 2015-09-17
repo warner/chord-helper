@@ -21,10 +21,12 @@ var preferred_chord_fingerings = { // ->[low-to-high]
     Am: ["X",0,2,2,1,0],
     F: ["X","X",3,2,1,1],
     C: ["X",3,2,0,1,0],
-    G: ["X","X",5,4,3,3],
+    //G: ["X","X",5,4,3,3],
+    G: [3,2,0,0,0,3],
     Dm: ["X","X",0,2,3,1],
     Fm: ["X","X",3,1,1,1],
-    Gm: ["X","X",5,3,3,3],
+    //Gm: ["X","X",5,3,3,3],
+    Gm: [3,1,0,0,3,3],
 };
 
 var use_flats;
@@ -114,6 +116,9 @@ var open_string_notes = {
     6: 24 // E4
 };
 
+var dots = {
+    3: "*", 5: "*", 7: "*", 9: "*", 12: "**"
+};
 
 
 function string_and_fret_to_note(string, fret) {
@@ -149,6 +154,17 @@ function draw_frets() {
             .attr("x2", fretX(i)).attr("y2", stringY(6.0))
             .attr("stroke-width", fret_width+"px")
         ;
+        var dots_here = dots[i];
+        if (dots_here) {
+            svg.append("text")
+                .attr("x", fretX(i)-half_space)
+                .attr("y", stringY(6.0))
+                .text(dots_here);
+            svg.append("text")
+                .attr("x", fretX(i)-half_space)
+                .attr("y", stringY(0.0))
+                .text(dots_here);
+        }
     }
     var g = svg.selectAll("g.string")
             .data([1,2,3,4,5,6])
@@ -380,4 +396,3 @@ function main() {
 
 main();
 window.addEventListener("resize", draw_frets);
-
