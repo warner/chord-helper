@@ -84,11 +84,11 @@ var keys = [
     ["G", major(7)]
 ];
 
-var notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+var note_names = ["C", "C#", "D", "D#", "E", "F", "F#", "G","G#","A","A#","B"];
 var flats = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
 var all_modes = [
-    ["ionian", [0,2,4,5,7,9]],
+    ["ionian", [0,2,4,5,7,9,11]],
     ["dorian", [0,2,3,5,7,9,10]],
     ["phrygian", [0,1,3,5,7,8,10]],
     ["lydian", [0,2,4,6,7,9,11]],
@@ -104,10 +104,26 @@ function create_scale() {
     var t = d3.select("table#scale");
     var row0 = t.append("tr");
     var scale = all_modes[current_scale_mode];
-    var degrees = row0.selectAll("td.degree").data(scale[1])
+    var range = [0,1,2,3,4,5,6,7,8,9,10,11];
+    var degrees = row0.selectAll("td.degree").data(range)
             .enter().append("td")
-            .attr("class", "degree")
+            .attr("class", function(d) {
+                if (scale[1].indexOf(d) != -1) {
+                    return "degree in-scale";
+                } else {
+                    return "degree not-in-scale";
+                }
+            })
             .text(function(d) {return "deg"+d;})
+    ;
+    var row1 = t.append("tr");
+    var notes = row1.selectAll("td.note")
+            .data(range.map(function(offset) {
+                return (current_scale_root+offset) % 12;
+            }))
+            .enter().append("td")
+            .attr("class", "note")
+            .text(function(d) {return note_names[d];})
     ;
 }
 
@@ -124,7 +140,7 @@ function draw_scoreboard() {
         row1.append("th").text(key[0]).attr("class", "key-name-header");
     });
     for (var i=0; i < 12; i++) {
-        var note = notes[i];
+        var note = note_names[i];
         var row = t.append("tr");
         row.append("td").text(note).attr("class", "note-name note-"+i);
         keys.forEach(function(key) {
