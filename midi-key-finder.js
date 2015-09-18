@@ -110,10 +110,8 @@ function doubled_offsets(mode_num) {
 
 function root_to_chord_data(r) {
     var mode = all_modes[current_scale_mode];
-    console.log("root_to_chord_data", mode, r);
+    //console.log("root_to_chord_data", mode, r);
     var mode_offsets = doubled_offsets(current_scale_mode);
-    mode[1].forEach(function(offset) { mode_offsets.push(0+offset); });
-    mode[1].forEach(function(offset) { mode_offsets.push(12+offset); });
     var root = mode_offsets[r+0];
     var off2 = mode_offsets[r+2]-root;
     var off3 = mode_offsets[r+4]-root-off2;
@@ -133,6 +131,53 @@ function root_to_chord_data(r) {
     return {name: name, notes: notes};
 }
     
+/*
+   |     | mode    |        |          |    |    |
+   | key | Ionian  | Dorian | Phrygian | .. | .. |
+   | C   | (score) |        |          |    |    |
+   | D.. |         |        |          |    |    |
+ */
+
+function create_scoreboard() {
+    var t = d3.select("table#scoreboard");
+    var row0 = t.append("tr");
+    row0.append("th"); // corner
+    row0.append("th").text("mode")
+        .attr("colspan", all_modes.length)
+        .attr("class", "mode-name-header");
+    var row1 = t.append("tr");
+    row1.append("th").text("key").attr("class", "note-name-header");
+    all_modes.forEach(function(mode) {
+        row1.append("th").text(mode[0]).attr("class", "key-name-header");
+    });
+    for (var i=0; i < 12; i++) {
+        var note = note_names[i];
+        var row = t.append("tr");
+        row.append("td").text(note).attr("class", "note-name note-"+i);
+        all_modes.forEach(function(mode, mode_num) {
+            row.append("td")
+                .datum({mode: mode_num, root: i})
+                .text("(score)")
+                .attr("class", "fitness fitness-"+mode[0]+"-"+note)
+                .on("click", select_scale)
+            ;
+        });
+    }
+}
+
+function select_scale(d) {
+    console.log("select_scale", note_names[d.root], all_modes[d.mode][0]);
+    current_scale_mode = d.mode;
+    current_scale_root = d.root;
+    update_scale();
+    update_chords();
+}
+
+/*
+*** "key: D Aeolian (minor)"
+    | C | C# | D | D# | E | F | F# | G | G# | A | A# | B | (fixed) |
+    | 7 |    | 1 |    | 2 | 3 |    | 4 |    | 5 |  6 |   | (var)   |
+ */
 
 function create_scale() {
     var t = d3.select("table#scale");
@@ -169,7 +214,7 @@ function update_scale() {
     var t = mode[1].map(function(offset) {
         return (current_scale_root+offset)%12;
     });
-    console.log("t", t);
+    //console.log("t", t);
     d3.selectAll("table#scale td.degree")
         .text(function(d) {
             var i = t.indexOf(d);
@@ -236,25 +281,6 @@ function create_chords() {
     });
 }
 
-function expand_mode(mode) {
-    // given e.g. (Ionioan) [0,2,4,5,7,9,11], return
-    // [0,1,2,3,4,"-",5,6,7,8,9,10,11,"="]
-    var out = [];
-    for (var i=0; i < 6; i++) {
-        out.push(mode[i]);
-        if (mode[i+1] == mode[i]+1)
-            out.push("-");
-        else
-            out.push(mode[i]+1);
-    }
-    out.push(mode[6]);
-    if (mode[6] == 11)
-        out.push("-");
-    else
-        out.push(11);
-    return out;
-}
-
 function update_chords() {
     var mode = all_modes[current_scale_mode];
     var mode_offsets = doubled_offsets(current_scale_mode);
@@ -265,7 +291,7 @@ function update_chords() {
                    note: note,
                    note_str: note_names[note]});
         if (mode_offsets[degree+1] == mode_offsets[degree]+1) {
-            data.push({degree_str: "-", note_str: "", note: ""});
+            data.push({degree_str: "", note_str: "", note: ""});
         } else {
             var next_note = (current_scale_root + mode_offsets[degree]+1)%12;
             data.push({degree_str: "+",
@@ -276,19 +302,19 @@ function update_chords() {
     /*var data2 = [{degree_str: "1", note_str: "D", note: 2},
                 {degree_str: "+", note_str: "D#", note: 3},
                 {degree_str: "2", note_str: "E", note: 4},
-                {degree_str: "-", note_str: "", note: "-"},
+                {degree_str: "", note_str: "", note: ""},
                 {degree_str: "3", note_str: "F", note: 5},
                 {degree_str: "+", note_str: "F#", note: 6},
                 {degree_str: "4", note_str: "G", note: 7},
                 {degree_str: "+", note_str: "G#", note: 8},
                 {degree_str: "5", note_str: "A", note: 9},
-                {degree_str: "-", note_str: "", note: "-"},
+                {degree_str: "", note_str: "", note: ""},
                 {degree_str: "6", note_str: "A#", note: 10},
                 {degree_str: "+", note_str: "B", note: 11},
                 {degree_str: "7", note_str: "C", note: 0},
                 {degree_str: "+", note_str: "C#", note: 1}
                ];*/
-    console.log(JSON.stringify(data));
+    //console.log(JSON.stringify(data));
     var chords = [0,1,2,3,4,5,6].map(root_to_chord_data);
     /*var chords2 = [{name: "i", notes: [2,5,9]},
                   {name: "ii0", notes: [4,7,10]},
@@ -298,14 +324,14 @@ function update_chords() {
                   {name: "VI", notes: [10,2,5]},
                   {name: "VII", notes: [0,4,7]}
                  ];*/
-    console.log(JSON.stringify(chords));
+    //console.log(JSON.stringify(chords));
                   
     d3.selectAll("table#chords tr.degree td.degree").data(data)
         .text(function(d) { return d.degree_str; })
         .attr("class", function(d) {
             var degree = d.degree_str;
-            if (degree == "-")
-                return "not-degree";
+            if (degree == "")
+                return "degree not-degree";
             if (degree == "+")
                 return "degree not-in-scale";
             return "degree degree-in-scale scale-degree-"+degree;
@@ -326,91 +352,18 @@ function update_chords() {
             .attr("class", function(d) {
                 if (chord.notes.indexOf(d.note) == -1)
                     return "chord-note";
-                return "chord-node scale-degree-"+d.degree_str;
+                return "chord-note scale-degree-"+d.degree_str;
             })
         ;
     });
 }
 
 
-function draw_scoreboard() {
-    var t = d3.select("table#scoreboard");
-    var row0 = t.append("tr");
-    row0.append("th"); // corner
-    row0.append("th").text("Key Name")
-        .attr("colspan", keys.length)
-        .attr("class", "key-name-header");
-    var row1 = t.append("tr");
-    row1.append("th").text("note").attr("class", "note-name-header");
-    keys.forEach(function(key) {
-        row1.append("th").text(key[0]).attr("class", "key-name-header");
-    });
-    for (var i=0; i < 12; i++) {
-        var note = note_names[i];
-        var row = t.append("tr");
-        row.append("td").text(note).attr("class", "note-name note-"+i);
-        keys.forEach(function(key) {
-            row.append("td").text(key[0]+"-"+note)
-                .attr("class", "fitness fitness-"+key[0]+"-"+note);
-        });
-    }
-    return;
-    var chords = [
-        ["I", [1,3,5], ""],
-        ["ii", [2,4,6], "m"],
-        ["iii", [3,5,7], "m"],
-        ["IV", [4,6,1], ""],
-        ["V", [5,7,2], ""],
-        ["vi", [6,1,3], "m"],
-    ];
-    var w = 50;
-    d3.select("div#chord svg").remove();
-    var svg = d3.select("div#chord").append("svg");
-    svg.attr("height", 100).attr("width", chords.length*w);
-    var groups = svg.selectAll("g.chord").data(chords)
-            .enter().append("svg:g")
-            .attr("class", "scale")
-            .attr("transform", function(d,i) {
-                var x = i*w;
-                return "translate("+x+",0)";
-            })
-            .on("click", select_chord)
-    ;
-    var rects = groups.append("svg:rect")
-            .attr("class", function(d) {return "chord-indicator "
-                                        +"chord-indicator-"+d[0];})
-            .attr("height", "1.2em")
-            .attr("width", function(d) {
-                return (1 + 0.5*(d[1].length-1) + "em");
-            })
-            .attr("fill", function(d){return major_scale_colors[d[1][0]];})
-            .attr("stroke-width", "2px")
-    ;
-    groups.append("svg:text")
-        .attr("class", "chord-buttons")
-        .text(function(d) {return d[0];})
-        .attr("text-anchor", "middle")
-        .attr("dy", "1.0em").attr("dx", "1em")
-    ;
-    groups.append("svg:text")
-        .attr("class", "chord-roots")
-        .text("??")
-        .attr("text-anchor", "middle")
-        .attr("dy", "2.2em").attr("dx", "1em")
-    ;
-    groups.append("svg:text")
-        .attr("class", "chord-quality")
-        .text("?")
-        .attr("text-anchor", "middle")
-        .attr("dy", "3.4em").attr("dx", "1em")
-    ;
-}
-
 function main() {
     try_midi();
     create_scale();
     update_scale();
-    draw_scoreboard();
+    create_scoreboard();
     create_chords();
     update_chords();
 }
