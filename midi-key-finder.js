@@ -88,24 +88,109 @@ var note_names = ["C", "C#", "D", "D#", "E", "F", "F#", "G","G#","A","A#","B"];
 var flats = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
 var all_modes = [
-    ["ionian", [0,2,4,5,7,9,11]],
-    ["dorian", [0,2,3,5,7,9,10]],
-    ["phrygian", [0,1,3,5,7,8,10]],
-    ["lydian", [0,2,4,6,7,9,11]],
-    ["mixolydian", [0,2,4,5,7,9,10]],
-    ["aeolian", [0,2,3,5,7,8,10]],
-    ["locrian", [0,1,3,5,6,8,10]]
+    ["Ionian", [0,2,4,5,7,9,11]], // major
+    ["Dorian", [0,2,3,5,7,9,10]],
+    ["Phrygian", [0,1,3,5,7,8,10]],
+    ["Lydian", [0,2,4,6,7,9,11]],
+    ["Mixolydian", [0,2,4,5,7,9,10]], // dominant
+    ["Aeolian", [0,2,3,5,7,8,10]], // natural minor
+    ["Locrian", [0,1,3,5,6,8,10]]
 ];
 
-var current_scale_root = 0;
-var current_scale_mode = 0;
+function mode_and_root_to_chord_notes(mode_num, scale_root, chord_root_degree) {
+    var mode_offsets = all_modes[mode_num][1];
+    var note1 = scale_root + mode_offsets[(chord_root_degree-1+0)%7];
+    var note2 = scale_root + mode_offsets[(chord_root_degree-1+2)%7];
+    var note3 = scale_root + mode_offsets[(chord_root_degree-1+4)%7];
+    return [note1, note2, note3];
+}
+
+function mode_and_root_to_chord_name(mode_num, chord_root_degree) {
+    console.log("mode_and_root_to_chord_name", mode_num, chord_root_degree);
+    var mode_offsets = all_modes[mode_num][1];
+    all_modes[mode_num][1].forEach(function(offset) {
+        mode_offsets.push(12+offset);
+    });
+    var root = mode_offsets[chord_root_degree-1+0];
+    var off2 = mode_offsets[chord_root_degree-1+2]-root;
+    var off3 = mode_offsets[chord_root_degree-1+4]-root-off2;
+    var name = ["i","ii","iii","iv","v","vi","vii"][chord_root_degree-1];
+    // for diatonic modes, we either get major, minor, or diminished
+    if (off2 == 4 && off3 == 3)
+        name = name.toUpperCase(); // major
+    else if (off2 == 3 && off3 == 4)
+        name = name.toLowerCase(); // minor
+    else if (off2 == 3 && off3 == 3)
+        name = name.toLowerCase() + "0"; // diminished
+    else
+        name = name.toLowerCase() +"?!?"; // oops
+    return name;
+}
+
+var current_scale_root = 2;
+var current_scale_mode = 5;
 
 function create_scale() {
     var t = d3.select("table#scale");
     var row0 = t.append("tr");
-    var scale = all_modes[current_scale_mode];
+    row0.append("td").attr("class", "key-name")
+        .attr("colspan", "12")
+        .text("??");
     var range = [0,1,2,3,4,5,6,7,8,9,10,11];
-    var degrees = row0.selectAll("td.degree").data(range)
+    var row1 = t.append("tr");
+    var ionian = all_modes[0][1];
+    var notes = row1.selectAll("td")
+            .data(range)
+            .enter().append("td")
+            .text(function(d) {return note_names[d];})
+            .attr("class", function(d) {
+                if (ionian.indexOf(d) != -1) {
+                    return "note in-scale";
+                } else {
+                    return "note not-in-scale";
+                }
+            })
+    ;
+    var row2 = t.append("tr");
+    row2.selectAll("td.degreenote").data(range)
+        .enter().append("td").attr("class", "degree")
+        .text("??")
+    ;
+}
+
+function update_scale() {
+    var mode = all_modes[current_scale_mode];
+    var text = "key/mode: "+note_names[current_scale_root]+" "+mode[0];
+    d3.select("table#scale td.key-name").text(text);
+    var t = mode[1].map(function(offset) {
+        return (current_scale_root+offset)%12;
+    });
+    console.log("t", t);
+    d3.selectAll("table#scale td.degree")
+        .text(function(d) {
+            var i = t.indexOf(d);
+            if (i == -1) {
+                return "";
+            } else {
+                return i+1;
+            }
+        })
+        .attr("class", function(d) {
+            var i = t.indexOf(d);
+            if (i == -1) {
+                return "degree not-in-scale";
+            } else {
+                return "degree scale-degree-"+(i+1);
+            }
+        })
+    ;
+}
+
+function off() {
+
+
+    var scale = all_modes[current_scale_mode];
+    var degrees = row1.selectAll("td.degree").data(range)
             .enter().append("td")
             .attr("class", function(d) {
                 if (scale[1].indexOf(d) != -1) {
@@ -116,8 +201,8 @@ function create_scale() {
             })
             .text(function(d) {return "deg"+d;})
     ;
-    var row1 = t.append("tr");
-    var notes = row1.selectAll("td.note")
+    var row2 = t.append("tr");
+    var notes = row2.selectAll("td.note")
             .data(range.map(function(offset) {
                 return (current_scale_root+offset) % 12;
             }))
@@ -126,6 +211,125 @@ function create_scale() {
             .text(function(d) {return note_names[d];})
     ;
 }
+
+/*
+   | degree | 1 | +  | 2 | - | 3 | +  | 4 | +  | 5 | - | 6  | + | 7 | +  |
+   | note   | D | D# | E |   | F | F# | G | G# | A |   | A# | B | C | C# |
+   | -      | - | -  | - | - | - | -  | - | -  | - | - | -  | - | - | -  |
+   | i      | D |    |   |   | F |    |   |    | A |   |    |   |   |    |
+   | ii0    |   |    | E |   |   |    | G |    |   |   | A# |   |   |    |
+   | III    |   |    |   |   | F |    |   |    | A |   |    |   | C |    |
+   | etc..  |   |    |   |   |   |    |   |    |   |   |    |   |   |    |
+*** degree labels are fixed, but have spaces that may or may not be used
+**** e.g. major scale leaves 3+/7+ unused, but for minor it's 2+/7+
+**** spaces that are used represent out-of-scale notes
+**** spaces that aren't used are not notes, and the whole column will be
+     empty, and needs to be colored/styled to indicate that
+*** note labels are sparse
+*** chord note labels are in fixed positions, under the degree labels
+ */
+
+function create_chords() {
+    var t = d3.select("table#chords");
+    var range = [0,1,2,3,4,5,6,7,8,9,10,11,12,13];
+    //var degrees = ["1","", "2","", "3", "4","", "5","", "6","", "7"];
+    var row0 = t.append("tr").attr("class", "degree");
+    row0.append("td").text("degree");
+    row0.selectAll("td.degree").data(range)
+        .enter().append("td")
+        .attr("class", "degree")
+        .text(function(d) {return d;});
+    var row1 = t.append("tr").attr("class", "note");
+    row1.append("td").text("note");
+    row1.selectAll("td.note").data(range)
+        .enter().append("td")
+        .attr("class", "note")
+        .text(function(d) {return d;});
+    t.append("tr").append("td");
+    [1,2,3,4,5,6,7].forEach(function(c) {
+        var rowC = t.append("tr").attr("class", "chord").datum(c);
+        rowC.append("td")
+            .attr("class", "chord-name")
+            .text(c);
+        rowC.selectAll("td.chord-note").data(range)
+            .enter().append("td")
+            .attr("class", "chord-note")
+            .text("?");
+    });
+}
+
+function expand_mode(mode) {
+    // given e.g. (Ionioan) [0,2,4,5,7,9,11], return
+    // [0,1,2,3,4,"-",5,6,7,8,9,10,11,"="]
+    var out = [];
+    for (var i=0; i < 6; i++) {
+        out.push(mode[i]);
+        if (mode[i+1] == mode[i]+1)
+            out.push("-");
+        else
+            out.push(mode[i]+1);
+    }
+    out.push(mode[6]);
+    if (mode[6] == 11)
+        out.push("-");
+    else
+        out.push(11);
+    return out;
+}
+
+function update_chords() {
+    var mode = all_modes[current_scale_mode];
+    var col_to_note = [2,3,4,"-",5,6,7,8,9,"-",10,11,0,1];
+    var col_to_degree = ["1","1+", "2","-", "3","3+", "4","4+",
+                         "5","-", "6","6+", "7","7+"];
+    var degree_labels = expand_mode(mode[1]);
+    console.log(degree_labels);
+    d3.selectAll("table#chords tr.degree td.degree")
+        .text(function(d) {
+            return col_to_degree[d];
+        })
+        .attr("class", function(d) {
+            var degree = col_to_degree[d];
+            if (degree == "-")
+                return "not-degree";
+            //var note = col_to_note[d];
+            //console.log("check1", mode[1], note);
+            //if (mode[1].indexOf(note) != -1)
+                return "degree degree-in-scale scale-degree-"+degree;
+            //return "degree not-in-scale";
+        });
+    d3.selectAll("table#chords tr.note td.note")
+        .text(function(d) {
+            var note = col_to_note[d];
+            if (note == "-")
+                return "";
+            else
+                return note_names[note];
+        });
+    d3.selectAll("table#chords tr.chord").each(function(d,i) {
+        var row = d3.select(this); // the row
+        var chord_root_degree = d; // 1 for I, 2 for ii, up to 7
+        var chord_name = mode_and_root_to_chord_name(current_scale_mode,
+                                                     chord_root_degree);
+        var notes = mode_and_root_to_chord_notes(current_scale_mode,
+                                                 current_scale_root,
+                                                 chord_root_degree);
+        row.select("td.chord-name").text(chord_name);
+        row.selectAll("td.chord-note").each(function(d) {
+            var td = d3.select(this);
+            var note = col_to_note[d];
+            var degree = col_to_degree[d];
+            var text = "";
+            var newclass = "chord-note";
+            if (notes.indexOf(note) != -1) {
+                text = note_names[note];
+                newclass = "chord-note scale-degree-"+degree;
+            }
+            td.text(text).attr("class", newclass);
+        });
+    });
+}
+
 
 function draw_scoreboard() {
     var t = d3.select("table#scoreboard");
@@ -203,7 +407,10 @@ function draw_scoreboard() {
 function main() {
     try_midi();
     create_scale();
+    update_scale();
     draw_scoreboard();
+    create_chords();
+    update_chords();
 }
 
 main();

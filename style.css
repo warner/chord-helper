@@ -68,9 +68,35 @@ table#scale {
 
 table#scale td {
     border: 1px solid black;
-    padding: 10px;
+    width: 20px;
+    padding: 5px;
 }
 
+td.scale-degree-1 {
+    background-color: #F33C27; /* red */
+}
+td.scale-degree-2 {
+    background-color: #FEAB3A; /* orange */
+}
+td.scale-degree-3 {
+    background-color: #F2DF3E; /* yellow */
+}
+td.scale-degree-4 {
+    background-color: #5BC92F; /* green */
+}
+td.scale-degree-5 {
+    background-color: #234CF7; /* blue */
+    color: #fff;
+}
+td.scale-degree-6 {
+    background-color: #A551DF; /* purple */
+    color: #fff;
+}
+td.scale-degree-7 {
+    background-color: #F300C8; /* sorta pink/magenta-ish */
+    color: #fff;
+}
+    
 table#scale td.in-scale {
     background-color: #fff;
     color: #000;
@@ -79,4 +105,21 @@ table#scale td.in-scale {
 table#scale td.not-in-scale {
     background-color: #666;
     color: #fff;
+}
+
+table#scale td.degree.not-in-scale {
+    background-color: #ccc;
+    color: #fff;
+}
+
+
+table#chords {
+    /*border: 2px solid green;*/
+    border-collapse: collapse;
+    margin: 20px;
+}
+
+table#chords td {
+    border: 1px solid black;
+    padding: 10px;
 }
