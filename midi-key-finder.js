@@ -329,12 +329,10 @@ function update_chords() {
     d3.selectAll("table#chords tr.degree td.degree").data(data)
         .text(function(d) { return d.degree_str; })
         .attr("class", function(d) {
-            var degree = d.degree_str;
-            if (degree == "")
-                return "degree not-degree";
-            if (degree == "+")
-                return "degree not-in-scale";
-            return "degree degree-in-scale scale-degree-"+degree;
+            var s = d.degree_str;
+            if (s == "")
+                s = "non-degree";
+            return "degree scale-degree-"+s;
         });
     d3.selectAll("table#chords tr.note td.note").data(data)
         .text(function(d) { return d.note_str; })
