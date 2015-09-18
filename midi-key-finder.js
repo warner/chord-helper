@@ -279,54 +279,59 @@ function expand_mode(mode) {
 
 function update_chords() {
     var mode = all_modes[current_scale_mode];
-    var col_to_note = [2,3,4,"-",5,6,7,8,9,"-",10,11,0,1];
-    var col_to_degree = ["1","1+", "2","-", "3","3+", "4","4+",
-                         "5","-", "6","6+", "7","7+"];
-    var degree_labels = expand_mode(mode[1]);
-    console.log(degree_labels);
-    d3.selectAll("table#chords tr.degree td.degree")
-        .text(function(d) {
-            return col_to_degree[d];
-        })
+    var data = [{degree_str: "1", note_str: "D", note: 2},
+                {degree_str: "+", note_str: "D#", note: 3},
+                {degree_str: "2", note_str: "E", note: 4},
+                {degree_str: "-", note_str: "", note: "-"},
+                {degree_str: "3", note_str: "F", note: 5},
+                {degree_str: "+", note_str: "F#", note: 6},
+                {degree_str: "4", note_str: "G", note: 7},
+                {degree_str: "+", note_str: "G#", note: 8},
+                {degree_str: "5", note_str: "A", note: 9},
+                {degree_str: "-", note_str: "", note: "-"},
+                {degree_str: "6", note_str: "A#", note: 10},
+                {degree_str: "+", note_str: "B", note: 11},
+                {degree_str: "7", note_str: "C", note: 0},
+                {degree_str: "+", note_str: "C#", note: 1}
+               ];
+    var chords = [{name: "i", notes: [2,5,9]},
+                  {name: "ii0", notes: [4,7,10]},
+                  {name: "III", notes: [5,9,0]},
+                  {name: "iv", notes: [7,10,2]},
+                  {name: "v", notes: [9,0,4]},
+                  {name: "VI", notes: [10,2,5]},
+                  {name: "VII", notes: [0,4,7]}
+                 ];
+                  
+    d3.selectAll("table#chords tr.degree td.degree").data(data)
+        .text(function(d) { return d.degree_str; })
         .attr("class", function(d) {
-            var degree = col_to_degree[d];
+            var degree = d.degree_str;
             if (degree == "-")
                 return "not-degree";
-            //var note = col_to_note[d];
-            //console.log("check1", mode[1], note);
-            //if (mode[1].indexOf(note) != -1)
-                return "degree degree-in-scale scale-degree-"+degree;
-            //return "degree not-in-scale";
+            if (degree == "+")
+                return "degree not-in-scale";
+            return "degree degree-in-scale scale-degree-"+degree;
         });
-    d3.selectAll("table#chords tr.note td.note")
-        .text(function(d) {
-            var note = col_to_note[d];
-            if (note == "-")
-                return "";
-            else
-                return note_names[note];
-        });
-    d3.selectAll("table#chords tr.chord").each(function(d,i) {
+    d3.selectAll("table#chords tr.note td.note").data(data)
+        .text(function(d) { return d.note_str; })
+    ;
+    d3.selectAll("table#chords tr.chord").data(chords).each(function(d,i) {
         var row = d3.select(this); // the row
-        var chord_root_degree = d; // 1 for I, 2 for ii, up to 7
-        var chord_name = mode_and_root_to_chord_name(current_scale_mode,
-                                                     chord_root_degree);
-        var notes = mode_and_root_to_chord_notes(current_scale_mode,
-                                                 current_scale_root,
-                                                 chord_root_degree);
-        row.select("td.chord-name").text(chord_name);
-        row.selectAll("td.chord-note").each(function(d) {
-            var td = d3.select(this);
-            var note = col_to_note[d];
-            var degree = col_to_degree[d];
-            var text = "";
-            var newclass = "chord-note";
-            if (notes.indexOf(note) != -1) {
-                text = note_names[note];
-                newclass = "chord-note scale-degree-"+degree;
-            }
-            td.text(text).attr("class", newclass);
-        });
+        var chord = d;
+        row.select("td.chord-name").text(chord.name);
+        row.selectAll("td.chord-note").data(data)
+            .text(function(d) {
+                if (chord.notes.indexOf(d.note) == -1)
+                    return "";
+                return d.note_str;
+            })
+            .attr("class", function(d) {
+                if (chord.notes.indexOf(d.note) == -1)
+                    return "chord-note";
+                return "chord-node scale-degree-"+d.degree_str;
+            })
+        ;
     });
 }
 
