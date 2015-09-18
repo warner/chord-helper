@@ -97,24 +97,27 @@ var all_modes = [
     ["Locrian", [0,1,3,5,6,8,10]]
 ];
 
-function mode_and_root_to_chord_notes(mode_num, scale_root, chord_root_degree) {
-    var mode_offsets = all_modes[mode_num][1];
-    var note1 = scale_root + mode_offsets[(chord_root_degree-1+0)%7];
-    var note2 = scale_root + mode_offsets[(chord_root_degree-1+2)%7];
-    var note3 = scale_root + mode_offsets[(chord_root_degree-1+4)%7];
-    return [note1, note2, note3];
+var current_scale_root = 2;
+var current_scale_mode = 5;
+
+function doubled_offsets(mode_num) {
+    var mode = all_modes[mode_num];
+    var mode_offsets = []; // doubled
+    mode[1].forEach(function(offset) { mode_offsets.push(0+offset); });
+    mode[1].forEach(function(offset) { mode_offsets.push(12+offset); });
+    return mode_offsets;
 }
 
-function mode_and_root_to_chord_name(mode_num, chord_root_degree) {
-    console.log("mode_and_root_to_chord_name", mode_num, chord_root_degree);
-    var mode_offsets = all_modes[mode_num][1];
-    all_modes[mode_num][1].forEach(function(offset) {
-        mode_offsets.push(12+offset);
-    });
-    var root = mode_offsets[chord_root_degree-1+0];
-    var off2 = mode_offsets[chord_root_degree-1+2]-root;
-    var off3 = mode_offsets[chord_root_degree-1+4]-root-off2;
-    var name = ["i","ii","iii","iv","v","vi","vii"][chord_root_degree-1];
+function root_to_chord_data(r) {
+    var mode = all_modes[current_scale_mode];
+    console.log("root_to_chord_data", mode, r);
+    var mode_offsets = doubled_offsets(current_scale_mode);
+    mode[1].forEach(function(offset) { mode_offsets.push(0+offset); });
+    mode[1].forEach(function(offset) { mode_offsets.push(12+offset); });
+    var root = mode_offsets[r+0];
+    var off2 = mode_offsets[r+2]-root;
+    var off3 = mode_offsets[r+4]-root-off2;
+    var name = ["i","ii","iii","iv","v","vi","vii"][r];
     // for diatonic modes, we either get major, minor, or diminished
     if (off2 == 4 && off3 == 3)
         name = name.toUpperCase(); // major
@@ -124,11 +127,12 @@ function mode_and_root_to_chord_name(mode_num, chord_root_degree) {
         name = name.toLowerCase() + "0"; // diminished
     else
         name = name.toLowerCase() +"?!?"; // oops
-    return name;
+    var notes = [(current_scale_root+mode_offsets[r+0])%12,
+                 (current_scale_root+mode_offsets[r+2])%12,
+                 (current_scale_root+mode_offsets[r+4])%12];
+    return {name: name, notes: notes};
 }
-
-var current_scale_root = 2;
-var current_scale_mode = 5;
+    
 
 function create_scale() {
     var t = d3.select("table#scale");
@@ -183,32 +187,6 @@ function update_scale() {
                 return "degree scale-degree-"+(i+1);
             }
         })
-    ;
-}
-
-function off() {
-
-
-    var scale = all_modes[current_scale_mode];
-    var degrees = row1.selectAll("td.degree").data(range)
-            .enter().append("td")
-            .attr("class", function(d) {
-                if (scale[1].indexOf(d) != -1) {
-                    return "degree in-scale";
-                } else {
-                    return "degree not-in-scale";
-                }
-            })
-            .text(function(d) {return "deg"+d;})
-    ;
-    var row2 = t.append("tr");
-    var notes = row2.selectAll("td.note")
-            .data(range.map(function(offset) {
-                return (current_scale_root+offset) % 12;
-            }))
-            .enter().append("td")
-            .attr("class", "note")
-            .text(function(d) {return note_names[d];})
     ;
 }
 
@@ -279,7 +257,23 @@ function expand_mode(mode) {
 
 function update_chords() {
     var mode = all_modes[current_scale_mode];
-    var data = [{degree_str: "1", note_str: "D", note: 2},
+    var mode_offsets = doubled_offsets(current_scale_mode);
+    var data = []; // will be 14 columns wide
+    for (var degree=0; degree < 7; degree++) {
+        var note = (current_scale_root + mode_offsets[degree])%12;
+        data.push({degree_str: ""+(degree+1),
+                   note: note,
+                   note_str: note_names[note]});
+        if (mode_offsets[degree+1] == mode_offsets[degree]+1) {
+            data.push({degree_str: "-", note_str: "", note: ""});
+        } else {
+            var next_note = (current_scale_root + mode_offsets[degree]+1)%12;
+            data.push({degree_str: "+",
+                       note: next_note,
+                       note_str: note_names[next_note]});
+        }
+    }
+    /*var data2 = [{degree_str: "1", note_str: "D", note: 2},
                 {degree_str: "+", note_str: "D#", note: 3},
                 {degree_str: "2", note_str: "E", note: 4},
                 {degree_str: "-", note_str: "", note: "-"},
@@ -293,15 +287,18 @@ function update_chords() {
                 {degree_str: "+", note_str: "B", note: 11},
                 {degree_str: "7", note_str: "C", note: 0},
                 {degree_str: "+", note_str: "C#", note: 1}
-               ];
-    var chords = [{name: "i", notes: [2,5,9]},
+               ];*/
+    console.log(JSON.stringify(data));
+    var chords = [0,1,2,3,4,5,6].map(root_to_chord_data);
+    /*var chords2 = [{name: "i", notes: [2,5,9]},
                   {name: "ii0", notes: [4,7,10]},
                   {name: "III", notes: [5,9,0]},
                   {name: "iv", notes: [7,10,2]},
                   {name: "v", notes: [9,0,4]},
                   {name: "VI", notes: [10,2,5]},
                   {name: "VII", notes: [0,4,7]}
-                 ];
+                 ];*/
+    console.log(JSON.stringify(chords));
                   
     d3.selectAll("table#chords tr.degree td.degree").data(data)
         .text(function(d) { return d.degree_str; })
