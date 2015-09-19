@@ -220,7 +220,7 @@ function create_scoreboard() {
     var row1 = t.append("tr");
     row1.append("th").text("key").attr("class", "note-name-header");
     all_modes.forEach(function(mode) {
-        row1.append("th").text(mode[0]).attr("class", "key-name-header");
+        row1.append("th").text(mode[0]).attr("class", "mode-name-header");
     });
     for (var root=0; root < 12; root++) {
         var note = note_names[root];

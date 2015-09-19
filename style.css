@@ -34,7 +34,7 @@ table#scoreboard {
     /*border-collapse: collapse;*/
 }
 
-table#scoreboard th.key-name-header {
+table#scoreboard th.mode-name-header {
     background-color: #ccf;
 }
 
