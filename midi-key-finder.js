@@ -11,7 +11,7 @@ function MIDIMessageEventHandler(event) {
     // Mask off the lower nibble (MIDI channel, which we don't care about)
     switch (event.data[0] & 0xf0) {
     case 0x90:
-        if (event.data[2]!=0) {  // if velocity != 0, this is a note-on message
+        if (event.data[2]!==0) {  // if velocity != 0, this is a note-on message
             noteOn(event.data[1]);
             return;
         }
@@ -23,14 +23,14 @@ function MIDIMessageEventHandler(event) {
 }
 
 function noteOn(noteNumber) {
-    console.log("note on: "+noteNumber);
+    //console.log("note on: "+noteNumber);
     var note = noteNumber % 12; // 0=C, 2=D, .. 12=B
-    d3.select("td.note-"+note).attr("class", "note-on note-name note-"+note);
+    d3.selectAll("td.note-"+note).classed("note-on", true);
 }
 function noteOff(noteNumber) {
-    console.log("note off: "+noteNumber);
+    //console.log("note off: "+noteNumber);
     var note = noteNumber % 12; // 0=C, 2=D, .. 12=B
-    d3.select("td.note-"+note).attr("class", "note-name note-"+note);
+    d3.selectAll("td.note-"+note).classed("note-on", false);
 }
 
 function startLoggingMIDIInput( midiAccess ) {
@@ -193,7 +193,7 @@ function create_scale() {
             .enter().append("td")
             .text(function(d) {return note_names[d];})
             .attr("class", function(d) {
-                if (ionian.indexOf(d) != -1) {
+                if (ionian.indexOf(d) !== -1) {
                     return "note in-scale";
                 } else {
                     return "note not-in-scale";
@@ -266,7 +266,7 @@ function create_chords() {
     row1.append("td").text("note");
     row1.selectAll("td.note").data(range)
         .enter().append("td")
-        .attr("class", "note")
+        .attr("class", "note note-name")
         .text(function(d) {return d;});
     t.append("tr").append("td");
     [1,2,3,4,5,6,7].forEach(function(c) {
@@ -336,6 +336,12 @@ function update_chords() {
         });
     d3.selectAll("table#chords tr.note td.note").data(data)
         .text(function(d) { return d.note_str; })
+        .attr("class", function(d) {
+            var s = "note note-name";
+            if (d.note !== "")
+                s += " note-"+d.note;
+            return s;
+        })
     ;
     d3.selectAll("table#chords tr.chord").data(chords).each(function(d,i) {
         var row = d3.select(this); // the row

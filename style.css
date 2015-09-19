@@ -42,8 +42,8 @@ table#scoreboard th.note-name-header, table#scoreboard td.note-name {
     background-color: #fcc;
 }
 
-table#scoreboard td.note-on {
-    background-color: #888;
+td.note-name.note-on {
+    background-color: #888 !important;
 }
 
 table#scoreboard td {
