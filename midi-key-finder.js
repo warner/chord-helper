@@ -22,11 +22,15 @@ function MIDIMessageEventHandler(event) {
     }
 }
 
+var scores = {};
+var recording = true;
+
 function noteOn(noteNumber) {
     //console.log("note on: "+noteNumber);
     var note = noteNumber % 12; // 0=C, 2=D, .. 12=B
     d3.selectAll("td.note-"+note).classed("note-on", true);
-    add_note_to_score(note);
+    if (recording)
+        add_note_to_score(note);
 }
 function noteOff(noteNumber) {
     //console.log("note off: "+noteNumber);
@@ -102,15 +106,36 @@ var all_modes = [
 var current_scale_root = 2;
 var current_scale_mode = 5;
 
-var scores = {};
-
 function reset_scores() {
     for (var root=0; root < 12; root++) {
         all_modes.forEach(function(mode) {
             scores[mode[0]+"-"+root] = 0;
         });
     }
-    d3.selectAll("td.fitness").classed("selected", false);
+    d3.selectAll("td.fitness")
+        .classed("selected", false)
+        .text("0")
+        .attr("style", "")
+    ;
+}
+
+function record_scores() {
+    recording = true;
+    d3.select("button#record-scores")
+        .classed("highlighted", true)
+        .text("Recording");
+    d3.select("button#pause-scores")
+        .classed("highlighted", false)
+        .text("pause");
+}
+function pause_scores() {
+    recording = false;
+    d3.select("button#record-scores")
+        .classed("highlighted", false)
+        .text("record");
+    d3.select("button#pause-scores")
+        .classed("highlighted", true)
+        .text("Paused");
 }
 
 function interpolate_color(half_value, min_color, max_color) {
@@ -439,7 +464,9 @@ function update_chords() {
 }
 
 function attach_buttons() {
-    d3.select("input#reset-scores").on("click", reset_scores);
+    d3.select("button#reset-scores").on("click", reset_scores);
+    d3.select("button#record-scores").on("click", record_scores);
+    d3.select("button#pause-scores").on("click", pause_scores);
 }
 
 function main() {
