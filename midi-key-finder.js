@@ -26,6 +26,7 @@ function noteOn(noteNumber) {
     //console.log("note on: "+noteNumber);
     var note = noteNumber % 12; // 0=C, 2=D, .. 12=B
     d3.selectAll("td.note-"+note).classed("note-on", true);
+    add_note_to_score(note);
 }
 function noteOff(noteNumber) {
     //console.log("note off: "+noteNumber);
@@ -72,6 +73,7 @@ function try_midi() {
     }
 }
 
+
 function major(start) {
     return [0,2,4,5,7,9,11].map(function(offset) { return start+offset; });
 }
@@ -99,6 +101,76 @@ var all_modes = [
 
 var current_scale_root = 2;
 var current_scale_mode = 5;
+
+var scores = {};
+
+function reset_scores() {
+    for (var root=0; root < 12; root++) {
+        all_modes.forEach(function(mode) {
+            scores[mode[0]+"-"+root] = 0;
+        });
+    }
+    d3.selectAll("td.fitness").classed("selected", false);
+}
+
+function interpolate_color(half_value, min_color, max_color) {
+    var color = [0,1,2].map(function(chan) {
+        var r256 = (max_color[chan]-min_color[chan])*2*half_value + min_color[chan];
+        var hex = Math.floor(r256).toString(16);
+        if (hex.length == 1)
+            hex = "0" + hex;
+        //console.log(r256, hex);
+        return hex;
+    });
+    return color;
+}
+
+function score_to_color(score, min, max) {
+    var where = (score-min) / (max-min);
+    var color;
+    if (where < 0.5)
+        color = interpolate_color(0.5-where, [255,255,255], [255,128,128]);
+    else
+        color = interpolate_color(where-0.5, [255,255,255], [128,255,128]);
+    var rgb = "#" + color[0] + color[1] + color[2];
+    //console.log(score, min, max, rgb);
+    return rgb;
+}
+
+function add_note_to_score(note) {
+    var min_score = 0;
+    var max_score = 0;
+    for (var root=0; root < 12; root++) {
+        all_modes.forEach(function(mode) {
+            var name = mode[0]+"-"+root;
+            var in_scale = false;
+            mode[1].forEach(function(offset) {
+                if ((root+offset)%12 == note)
+                    in_scale = true;
+            });
+            if (note == root)
+                scores[name] += 2;
+            else if (in_scale)
+                scores[name] += 1;
+            else
+                scores[name] -= 5;
+            if (scores[name] > max_score)
+                max_score = scores[name];
+            if (scores[name] < min_score)
+                min_score = scores[name];
+        });
+    }
+    for (root=0; root < 12; root++) {
+        all_modes.forEach(function(mode) {
+            var name = mode[0]+"-"+root;
+            var color = score_to_color(scores[name], min_score, max_score);
+            d3.select("td.fitness-"+name)
+                .text(scores[name])
+                .attr("style", "background-color: "+color)
+            ;
+        });
+    }
+}
 
 function doubled_offsets(mode_num) {
     var mode = all_modes[mode_num];
@@ -150,15 +222,16 @@ function create_scoreboard() {
     all_modes.forEach(function(mode) {
         row1.append("th").text(mode[0]).attr("class", "key-name-header");
     });
-    for (var i=0; i < 12; i++) {
-        var note = note_names[i];
+    for (var root=0; root < 12; root++) {
+        var note = note_names[root];
         var row = t.append("tr");
-        row.append("td").text(note).attr("class", "note-name note-"+i);
+        row.append("td").text(note).attr("class", "note-name note-"+note);
         all_modes.forEach(function(mode, mode_num) {
+            var name = mode[0]+"-"+root;
             row.append("td")
-                .datum({mode: mode_num, root: i})
-                .text("(score)")
-                .attr("class", "fitness fitness-"+mode[0]+"-"+note)
+                .datum({mode: mode_num, root: root})
+                .text(0)
+                .attr("class", "fitness fitness-"+name)
                 .on("click", select_scale)
             ;
         });
@@ -166,7 +239,10 @@ function create_scoreboard() {
 }
 
 function select_scale(d) {
-    console.log("select_scale", note_names[d.root], all_modes[d.mode][0]);
+    var name = all_modes[d.mode][0]+"-"+d.root;
+    console.log("select_scale", name, note_names[d.root], all_modes[d.mode][0]);
+    d3.selectAll("td.fitness").classed("selected", false);
+    d3.select("td.fitness-"+name).classed("selected", true);
     current_scale_mode = d.mode;
     current_scale_root = d.root;
     update_scale();
@@ -362,14 +438,19 @@ function update_chords() {
     });
 }
 
+function attach_buttons() {
+    d3.select("input#reset-scores").on("click", reset_scores);
+}
 
 function main() {
     try_midi();
     create_scale();
     update_scale();
     create_scoreboard();
+    reset_scores();
     create_chords();
     update_chords();
+    attach_buttons();
 }
 
 main();

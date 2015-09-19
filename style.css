@@ -31,7 +31,7 @@ div#chord {
 
 table#scoreboard {
     /*border: 2px solid green;*/
-    border-collapse: collapse;
+    /*border-collapse: collapse;*/
 }
 
 table#scoreboard th.key-name-header {
@@ -39,7 +39,7 @@ table#scoreboard th.key-name-header {
 }
 
 table#scoreboard th.note-name-header, table#scoreboard td.note-name {
-    background-color: #fcc;
+    background-color: #cff;
 }
 
 td.note-name.note-on {
@@ -56,7 +56,10 @@ table#scoreboard td.note-name {
 }
 
 table#scoreboard td.fitness {
-    border: 1px solid black;
+    border: 3px solid transparent;
+}
+table#scoreboard td.fitness.selected {
+    border: 3px solid black;
 }
 
 
