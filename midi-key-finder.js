@@ -308,9 +308,33 @@ function create_scale() {
     ;
 }
 
+function render_sharps_flats(mode, root) {
+    var sig = "";
+    // Start by assuming all black keys are sharps. Then for each black key,
+    // see if the same-lettered white key is also in the scale. If so, then
+    // all black keys must be flats.
+    var notes = mode[1].map(function(offset) { return (root+offset)%12; });
+    var black_keys = [1,3,6,8,10];
+    var pairs = [ [0,1], [2,3], [5,6], [7,8], [9,10] ];
+    var sig_type = "#";
+    for (var i=0; i<pairs.length; i++) {
+        if ((notes.indexOf(pairs[i][0]) != -1) &&
+            (notes.indexOf(pairs[i][1]) != -1))
+            sig_type = "b";
+    }
+    for (i=0; i<black_keys.length; i++) {
+        if (notes.indexOf(black_keys[i]) != -1)
+            sig = sig + sig_type;
+    }
+    // TODO: this gets Gb/F# wrong (should be 6b or 6#, gives 5b)
+    // note sure about anything but Ionian/Aeolian (major/minor)
+    return sig;
+}
+
 function update_scale() {
     var mode = all_modes[current_scale_mode];
     var text = "key/mode: "+note_names[current_scale_root]+" "+mode[0];
+    text += " ("+render_sharps_flats(mode, current_scale_root)+")";
     d3.select("table#scale td.key-name").text(text);
     var t = mode[1].map(function(offset) {
         return (current_scale_root+offset)%12;
