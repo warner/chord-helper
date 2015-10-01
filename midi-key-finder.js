@@ -77,6 +77,52 @@ function try_midi() {
     }
 }
 
+// we can set the colors of the LinnStrument keyboard matrix over MIDI
+// x=0 is the control-key column, x=1 is the left play column, x=25 right
+// y=0 is the bottom row, y=7 is the top
+var LIcolors = {
+    default: 0,
+    red: 1,
+    yellow: 2,
+    green: 3,
+    cyan: 4,
+    blue: 5,
+    magenta: 6,
+    off: 7
+};
+function LIsetColor(output,x,y,color) {
+    output.send( [0xb0, 0x14, x] );
+    output.send( [0xb0, 0x15, y] );
+    output.send( [0xb0, 0x16, LIcolors[color]] );
+}
+
+function LIsetAllColors(output, color) {
+    for (var x=0; x <= 25; x++) {
+        for (var y=0; y <= 7; y++) {
+            var c = color;
+            if (typeof(color) == "function")
+                c = color(x,y);
+            //console.log(x,y,c);
+            LIsetColor(output,x,y,c);
+        }
+    }
+}
+
+function LIfindOutput() {
+    for (var o of midi.outputs) {
+        if (o[1].name == "LinnStrument MIDI")
+            return o[1];
+    }
+}
+
+function LInoteForButton(x,y) {
+    if (x==0)
+        return -1; // control-key column
+    var noteNumber = 0x1e; // 0,0 is MIDI 0x1e, which is G0
+    noteNumber += (x-1);
+    noteNumber += 5*y;
+    return noteNumber;
+}
 
 function major(start) {
     return [0,2,4,5,7,9,11].map(function(offset) { return start+offset; });
@@ -105,6 +151,47 @@ var all_modes = [
 
 var current_scale_root = 2;
 var current_scale_mode = 5;
+
+function LIlightScale() {
+    if (!midi) {
+        console.log("LIlightScale: no midi");
+        return;
+    }
+    var output = LIfindOutput();
+    if (!LIfindOutput) {
+        console.log("LIlightScale: no LinnStrument");
+        return;
+    }
+    var scale = all_modes[current_scale_mode][1].map(function(offset) {
+        return (current_scale_root + offset) % 12;
+    });
+    LIsetAllColors(output, function(x,y) {
+        var noteNumber = LInoteForButton(x,y);
+        if (noteNumber == -1)
+            return "default"; // control-key row: leave at default
+        var note = noteNumber % 12;
+        var note_type = "not";
+        if (note == current_scale_root)
+            note_type = "tonic";
+        else if (scale.indexOf(note) != -1)
+            note_type = "scale";
+
+        // mark center-C3 with red, even when it's not in the scale
+        var center = "";
+        if (x == 11 && y == 4)
+            center = "-center";
+
+        var colors = {
+            "tonic": "cyan",
+            "scale": "green",
+            "not": "off",
+            "tonic-center": "magenta", // blue+red
+            "scale-center": "yellow", // green+red
+            "not-center": "red" // off+red
+        };
+        return colors[note_type+center];
+    });
+}
 
 function reset_scores() {
     for (var root=0; root < 12; root++) {
@@ -358,6 +445,7 @@ function update_scale() {
             }
         })
     ;
+    LIlightScale();
 }
 
 /*
@@ -491,6 +579,9 @@ function attach_buttons() {
     d3.select("button#reset-scores").on("click", reset_scores);
     d3.select("button#record-scores").on("click", record_scores);
     d3.select("button#pause-scores").on("click", pause_scores);
+    d3.select("button#reset-lights").on("click", function(e) {
+        LIsetAllColors(LIfindOutput(), "default");
+    });
 }
 
 function main() {
