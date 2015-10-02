@@ -195,8 +195,8 @@ function LIlightScale() {
 
 function reset_scores() {
     for (var root=0; root < 12; root++) {
-        all_modes.forEach(function(mode) {
-            scores[mode[0]+"-"+root] = 0;
+        all_modes.forEach(function(mode, mode_num) {
+            scores[mode_num+"-"+root] = 0;
         });
     }
     d3.selectAll("td.fitness")
@@ -253,8 +253,8 @@ function add_note_to_score(note) {
     var min_score = 0;
     var max_score = 0;
     for (var root=0; root < 12; root++) {
-        all_modes.forEach(function(mode) {
-            var name = mode[0]+"-"+root;
+        all_modes.forEach(function(mode, mode_num) {
+            var name = mode_num+"-"+root;
             var in_scale = false;
             mode[1].forEach(function(offset) {
                 if ((root+offset)%12 == note)
@@ -273,8 +273,8 @@ function add_note_to_score(note) {
         });
     }
     for (root=0; root < 12; root++) {
-        all_modes.forEach(function(mode) {
-            var name = mode[0]+"-"+root;
+        all_modes.forEach(function(mode,mode_num) {
+            var name = mode_num+"-"+root;
             var color = score_to_color(scores[name], min_score, max_score);
             d3.select("td.fitness-"+name)
                 .text(scores[name])
@@ -339,7 +339,7 @@ function create_scoreboard() {
         var row = t.append("tr");
         row.append("td").text(note).attr("class", "note-name note-"+note);
         all_modes.forEach(function(mode, mode_num) {
-            var name = mode[0]+"-"+root;
+            var name = mode_num+"-"+root;
             row.append("td")
                 .datum({mode: mode_num, root: root})
                 .text(0)
@@ -351,8 +351,9 @@ function create_scoreboard() {
 }
 
 function select_scale(d) {
-    var name = all_modes[d.mode][0]+"-"+d.root;
-    console.log("select_scale", name, note_names[d.root], all_modes[d.mode][0]);
+    var name = d.mode+"-"+d.root;
+    console.log("select_scale", all_modes[d.mode][0]+"-"+d.root,
+                note_names[d.root], all_modes[d.mode][0]);
     d3.selectAll("td.fitness").classed("selected", false);
     d3.select("td.fitness-"+name).classed("selected", true);
     current_scale_mode = d.mode;
