@@ -140,13 +140,18 @@ var note_names = ["C", "C#", "D", "D#", "E", "F", "F#", "G","G#","A","A#","B"];
 var flats = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
 var all_modes = [
-    ["Ionian", [0,2,4,5,7,9,11]], // major
+    ["Ionian (major)", [0,2,4,5,7,9,11]], // major
     ["Dorian", [0,2,3,5,7,9,10]],
     ["Phrygian", [0,1,3,5,7,8,10]],
     ["Lydian", [0,2,4,6,7,9,11]],
-    ["Mixolydian", [0,2,4,5,7,9,10]], // dominant
-    ["Aeolian", [0,2,3,5,7,8,10]], // natural minor
-    ["Locrian", [0,1,3,5,6,8,10]]
+    ["Mixolydian (dominant)", [0,2,4,5,7,9,10]], // dominant
+    ["Aeolian (minor)", [0,2,3,5,7,8,10]], // natural minor
+    ["Locrian", [0,1,3,5,6,8,10]],
+    ["diminished", [0,1,3,4,6,7,9,10]],
+    ["Hungarian minor", [0,2,3,6,7,8,11]], // Pink Panther = A
+    ["minor blues", [0.4,6,7,8,11]],
+    ["minor pentatonic", [0,3,5,7,10]],
+    ["major pentatonic", [0,2,4,7,9]],
 ];
 
 var current_scale_root = 2;

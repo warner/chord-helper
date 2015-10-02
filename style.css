@@ -43,6 +43,9 @@ table#scoreboard {
 table#scoreboard th.mode-name-header {
     background-color: #ccf;
 }
+th.mode-name-header {
+    width: 4em;
+}
 
 table#scoreboard th.note-name-header, table#scoreboard td.note-name {
     background-color: #cff;
