@@ -54,7 +54,6 @@ function playOff(noteNumber) {
 }
 
 function changeVolume(e) {
-    console.log("changeVolume", e, this.value);
     audio.volume = this.value / 100;
 }
 
@@ -181,7 +180,6 @@ function LIfindOutput() {
 
 function try_linnstrument() {
     var o = LIfindOutput();
-    console.log("li", o);
     if (o)
         d3.select("button#reset-lights").style("visibility", "visible");
 }
@@ -213,7 +211,6 @@ var virtual_keyboard_notes = {
 };
 
 function handle_keydown(e) {
-    console.log("keydown", e.keyCode, e);
     if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey)
         return;
     var noteNumber = virtual_keyboard_notes[e.keyCode];
@@ -223,7 +220,6 @@ function handle_keydown(e) {
 }
 
 function handle_keyup(e) {
-    console.log("keyup", e.keyCode, e);
     if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey)
         return;
     var noteNumber = virtual_keyboard_notes[e.keyCode];
