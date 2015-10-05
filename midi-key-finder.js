@@ -10,7 +10,7 @@ var audio = {
     portamento: 0.005,  // portamento/glide speed
     activeNotes: [] // the stack of actively-pressed keys
 };
-var sound_on = true;
+var sound_on = false;
 
 // example copied from http://webaudio.github.io/web-midi-api/
 function createAudioContext() {
@@ -55,6 +55,20 @@ function playOff(noteNumber) {
 
 function changeVolume(e) {
     audio.volume = this.value / 100;
+}
+
+function toggle_audio(e) {
+    if (sound_on) {
+        d3.select("button#toggle-audio")
+            .classed("highlighted", false)
+            .text("Audio is: OFF");
+        sound_on = false;
+    } else {
+        d3.select("button#toggle-audio")
+            .classed("highlighted", true)
+            .text("Audio is: ON");
+        sound_on = true;
+    }
 }
 
 
@@ -315,23 +329,18 @@ function reset_scores() {
     ;
 }
 
-function record_scores() {
-    recording = true;
-    d3.select("button#record-scores")
-        .classed("highlighted", true)
-        .text("Recording");
-    d3.select("button#pause-scores")
-        .classed("highlighted", false)
-        .text("pause");
-}
-function pause_scores() {
-    recording = false;
-    d3.select("button#record-scores")
-        .classed("highlighted", false)
-        .text("record");
-    d3.select("button#pause-scores")
-        .classed("highlighted", true)
-        .text("Paused");
+function toggle_scores_active() {
+    if (recording) {
+        d3.select("button#scores-active")
+            .classed("highlighted", false)
+            .text("Counters are: paused");
+        recording = false;
+    } else {
+        d3.select("button#scores-active")
+            .classed("highlighted", true)
+            .text("Counters are: ACTIVE");
+        recording = true;
+    }
 }
 
 function interpolate_color(half_value, min_color, max_color) {
@@ -686,12 +695,12 @@ function update_chords() {
 }
 
 function attach_buttons() {
+    d3.select("button#scores-active").on("click", toggle_scores_active);
     d3.select("button#reset-scores").on("click", reset_scores);
-    d3.select("button#record-scores").on("click", record_scores);
-    d3.select("button#pause-scores").on("click", pause_scores);
     d3.select("button#reset-lights").on("click", function(e) {
         LIsetAllColors(LIfindOutput(), "default");
     });
+    d3.select("button#toggle-audio").on("click", toggle_audio);
     //d3.select("div#status").on("keydown", handle_keydown);
     //d3.select("div#status").on("keyup", handle_keyup);
     window.onkeyup = handle_keyup;
