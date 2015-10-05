@@ -1,5 +1,63 @@
 var d3; // defined by import
 var midi = null;  // global MIDIAccess object
+var audio = {
+    context: null,
+    oscillator: null,  // the single oscillator
+    envelope: null,    // the envelope for the single oscillator
+    volume: 0.2,
+    attack: 0.05,      // attack speed
+    release: 0.05,   // release speed
+    portamento: 0.005,  // portamento/glide speed
+    activeNotes: [] // the stack of actively-pressed keys
+};
+var sound_on = true;
+
+// example copied from http://webaudio.github.io/web-midi-api/
+function createAudioContext() {
+    var context = audio.context = new AudioContext();
+    // set up the basic oscillator chain, muted to begin with.
+    audio.oscillator = context.createOscillator();
+    audio.oscillator.frequency.setValueAtTime(110, 0);
+    audio.envelope = context.createGain();
+    audio.oscillator.connect(audio.envelope);
+    audio.envelope.connect(context.destination);
+    audio.envelope.gain.value = 0.0;  // Mute the sound
+    audio.oscillator.start(0);  // Go ahead and start up the oscillator
+}
+
+function frequencyFromNoteNumber( note ) {
+    return 440 * Math.pow(2,(note-69)/12);
+}
+
+function playOn(noteNumber) {
+    audio.activeNotes.push( noteNumber );
+    audio.oscillator.frequency.cancelScheduledValues(0);
+    var freq = frequencyFromNoteNumber(noteNumber);
+    audio.oscillator.frequency.setTargetAtTime(freq, 0, audio.portamento );
+    audio.envelope.gain.cancelScheduledValues(0);
+    audio.envelope.gain.setTargetAtTime(audio.volume, 0, audio.attack);
+}
+
+function playOff(noteNumber) {
+    var position = audio.activeNotes.indexOf(noteNumber);
+    if (position!=-1) {
+        audio.activeNotes.splice(position,1);
+    }
+    if (audio.activeNotes.length==0) {  // shut off the envelope
+        audio.envelope.gain.cancelScheduledValues(0);
+        audio.envelope.gain.setTargetAtTime(0.0, 0, audio.release );
+    } else {
+        audio.oscillator.frequency.cancelScheduledValues(0);
+        var freq = frequencyFromNoteNumber(audio.activeNotes[audio.activeNotes.length-1]);
+        audio.oscillator.frequency.setTargetAtTime(freq, 0, audio.portamento);
+      }
+}
+
+function changeVolume(e) {
+    console.log("changeVolume", e, this.value);
+    audio.volume = this.value / 100;
+}
+
 
 function MIDIMessageEventHandler(event) {
     var str = "MIDI message rx: ";
@@ -27,6 +85,8 @@ var recording = true;
 
 function noteOn(noteNumber) {
     //console.log("note on: "+noteNumber);
+    if (sound_on)
+        playOn(noteNumber);
     var note = noteNumber % 12; // 0=C, 2=D, .. 12=B
     d3.selectAll("td.note-"+note).classed("note-on", true);
     if (recording)
@@ -34,6 +94,7 @@ function noteOn(noteNumber) {
 }
 function noteOff(noteNumber) {
     //console.log("note off: "+noteNumber);
+    playOff(noteNumber);
     var note = noteNumber % 12; // 0=C, 2=D, .. 12=B
     d3.selectAll("td.note-"+note).classed("note-on", false);
 }
@@ -58,22 +119,25 @@ function status(msg) {
     console.log(msg);
 }
 
+var instructions = "Play virtual keyboard: ASDFGHJK = CDEFGABC, WE=C#D#, TYU=F#G#A#.";
+
 function onMIDISuccess( midiAccess ) {
-    status("MIDI ready!");
+    status("MIDI ready! "+instructions+" Or play MIDI keyboard.");
     midi = midiAccess;
     listInputsAndOutputs(midiAccess);
     startLoggingMIDIInput(midiAccess);
+    try_linnstrument();
 }
 
 function onMIDIFailure(msg) {
-    status( "Failed to get MIDI access - " + msg);
+    status(instructions+" (failed to get MIDI access - " + msg+")");
 }
 
 function try_midi() {
     if (navigator.requestMIDIAccess) {
         navigator.requestMIDIAccess().then( onMIDISuccess, onMIDIFailure );
     } else {
-        status("browser lacks navigator.requestMIDIAccess");
+        status(instructions+" (browser lacks navigator.requestMIDIAccess)");
     }
 }
 
@@ -115,6 +179,13 @@ function LIfindOutput() {
     }
 }
 
+function try_linnstrument() {
+    var o = LIfindOutput();
+    console.log("li", o);
+    if (o)
+        d3.select("button#reset-lights").style("visibility", "visible");
+}
+
 function LInoteForButton(x,y) {
     if (x==0)
         return -1; // control-key column
@@ -122,6 +193,43 @@ function LInoteForButton(x,y) {
     noteNumber += (x-1);
     noteNumber += 5*y;
     return noteNumber;
+}
+
+// map virtual keyboard: ASDFGHJK = CDEFGABC, WE=C#D#, TYU=F#G#A#
+var virtual_keyboard_notes = {
+    65: 0, // A -> C
+    87: 1, // W -> C#
+    83: 2, // S -> D
+    69: 3, // E -> D#
+    68: 4, // D -> E
+    70: 5, // F -> F
+    84: 6, // T -> F#
+    71: 7, // G -> G
+    89: 8, // Y -> G#
+    72: 9, // H -> A
+    85: 10, // U -> A#
+    74: 11, // J -> B
+    75: 12 // K -> C
+};
+
+function handle_keydown(e) {
+    console.log("keydown", e.keyCode, e);
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey)
+        return;
+    var noteNumber = virtual_keyboard_notes[e.keyCode];
+    if (noteNumber !== undefined) {
+        noteOn(5*12+noteNumber);
+    }
+}
+
+function handle_keyup(e) {
+    console.log("keyup", e.keyCode, e);
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey)
+        return;
+    var noteNumber = virtual_keyboard_notes[e.keyCode];
+    if (noteNumber !== undefined) {
+        noteOff(5*12+noteNumber);
+    }
 }
 
 function major(start) {
@@ -588,9 +696,16 @@ function attach_buttons() {
     d3.select("button#reset-lights").on("click", function(e) {
         LIsetAllColors(LIfindOutput(), "default");
     });
+    //d3.select("div#status").on("keydown", handle_keydown);
+    //d3.select("div#status").on("keyup", handle_keyup);
+    window.onkeyup = handle_keyup;
+    window.onkeydown = handle_keydown;
+    d3.select("input#volume").on("change", changeVolume);
 }
 
 function main() {
+    createAudioContext();
+    d3.select("button#reset-lights").style("visibility", "hidden");
     try_midi();
     create_scale();
     update_scale();
