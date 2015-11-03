@@ -281,7 +281,7 @@ function LIlightScale() {
         return;
     }
     var output = LIfindOutput();
-    if (!LIfindOutput) {
+    if (!output) {
         console.log("LIlightScale: no LinnStrument");
         return;
     }
